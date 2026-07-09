@@ -7,9 +7,8 @@ Usage (all commands take --lang, e.g. --lang en; default from DEFAULT_LANG):
     uv run bot double-redirects [--apply]   # preview/fix double redirects
     uv run bot page TITLE [--raw]           # show a page's wikitext + basic info
     uv run bot edit TITLE ... [--apply]     # preview/save new text for a page
+    uv run bot sync-events [--apply]        # sync pt Próximos eventos from en Upcoming events
 """
-
-from __future__ import annotations
 
 import argparse
 import difflib
@@ -18,6 +17,7 @@ import sys
 import time
 
 from wikifur_bot.client import DEFAULT_LANG, connect
+from wikifur_bot.sync_events import cmd_sync_events, SYNC_SOURCE_LANG
 
 
 def cmd_check(args: argparse.Namespace) -> None:
@@ -233,6 +233,14 @@ def main() -> None:
     p_edit.add_argument("--minor", action="store_true", help="mark as a minor edit")
     p_edit.add_argument("--apply", action="store_true", help="save the edit (default: dry-run diff)")
 
+    p_sync = sub.add_parser(
+        "sync-events",
+        parents=[common],
+        help=f"sync a language's events template from {SYNC_SOURCE_LANG}'s (default target: {DEFAULT_LANG})",
+    )
+    p_sync.add_argument("--apply", action="store_true", help="save the edit (default: dry-run diff)")
+    p_sync.add_argument("--summary", default="", help="edit summary (default: auto-generated)")
+
     args = parser.parse_args()
     handlers = {
         "check": cmd_check,
@@ -241,6 +249,7 @@ def main() -> None:
         "double-redirects": cmd_double_redirects,
         "page": cmd_page,
         "edit": cmd_edit,
+        "sync-events": cmd_sync_events,
     }
     try:
         handlers[args.command](args)

@@ -11,3 +11,6 @@ wheels/
 
 # Secrets
 .env
+
+# Local bot state (e.g. last-synced revision ids)
+.wikifur_bot_sync_state.json

@@ -13,8 +13,6 @@ exact User-Agent (and IP) of the browser that solved the challenge, so
 USER_AGENT_SPOOF must match that browser character-for-character.
 """
 
-from __future__ import annotations
-
 import os
 import subprocess
 
