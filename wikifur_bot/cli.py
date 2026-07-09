@@ -5,11 +5,14 @@ Usage (all commands take --lang, e.g. --lang en; default from DEFAULT_LANG):
     uv run bot whoami                       # login and show identity
     uv run bot recent [-n N]                # last N recent changes (default 10)
     uv run bot double-redirects [--apply]   # preview/fix double redirects
+    uv run bot page TITLE [--raw]           # show a page's wikitext + basic info
+    uv run bot edit TITLE ... [--apply]     # preview/save new text for a page
 """
 
 from __future__ import annotations
 
 import argparse
+import difflib
 import re
 import sys
 import time
@@ -42,6 +45,59 @@ def cmd_recent(args: argparse.Namespace) -> None:
     for change in changes:
         when = time.strftime("%Y-%m-%d %H:%M", change["timestamp"])
         print(f"{when}  {change.get('user', '?'):<20} {change.get('title', '')}  ({change.get('comment', '')})")
+
+
+def cmd_page(args: argparse.Namespace) -> None:
+    site = connect(args.lang, login=False)
+    page = site.pages[args.title]
+    if not page.exists:
+        sys.exit(f"[[{args.title}]] does not exist on {args.lang}.wikifur.com")
+
+    if not args.raw:
+        print(f"Title:    {page.name}")
+        print(f"Redirect: {'yes -> ' + str(page.redirects_to()) if page.redirect else 'no'}")
+        print(f"Length:   {page.length} bytes")
+        print(f"Touched:  {time.strftime('%Y-%m-%d %H:%M', page.touched)}")
+        print("---")
+    print(page.text())
+
+
+def _read_new_text(args: argparse.Namespace) -> str:
+    if args.text is not None:
+        return args.text
+    if args.file is not None:
+        with open(args.file, encoding="utf-8") as f:
+            return f.read()
+    return sys.stdin.read()
+
+
+def cmd_edit(args: argparse.Namespace) -> None:
+    if args.apply and not args.summary:
+        sys.exit("--summary is required when saving with --apply")
+
+    new_text = _read_new_text(args)
+    site = connect(args.lang, login=args.apply)
+    page = site.pages[args.title]
+    old_text = page.text() if page.exists else ""
+
+    diff = list(
+        difflib.unified_diff(
+            old_text.splitlines(keepends=True),
+            new_text.splitlines(keepends=True),
+            fromfile=f"{args.title} (current)",
+            tofile=f"{args.title} (new)",
+        )
+    )
+    if not diff:
+        print(f"No changes to [[{args.title}]].")
+        return
+    sys.stdout.writelines(diff)
+
+    if args.apply:
+        page.save(new_text, summary=args.summary, minor=args.minor, bot=True)
+        print(f"\nSaved [[{args.title}]].")
+    else:
+        print(f"\nDry run — rerun with --apply to save (summary: {args.summary!r}).")
 
 
 # In a page the API flags as a redirect, the target is the first wikilink.
@@ -164,12 +220,27 @@ def main() -> None:
     p_dr = sub.add_parser("double-redirects", parents=[common], help="preview/fix double redirects")
     p_dr.add_argument("--apply", action="store_true", help="save the edits (default: dry run)")
 
+    p_page = sub.add_parser("page", parents=[common], help="show a page's wikitext + basic info")
+    p_page.add_argument("title", help="page title, e.g. 'User:Kiva' or 'Main Page'")
+    p_page.add_argument("--raw", action="store_true", help="print only the wikitext, no metadata header")
+
+    p_edit = sub.add_parser("edit", parents=[common], help="preview/save new text for a page")
+    p_edit.add_argument("title", help="page title, e.g. 'User:Kiva' or 'Main Page'")
+    text_source = p_edit.add_mutually_exclusive_group()
+    text_source.add_argument("--text", help="new page text, inline")
+    text_source.add_argument("--file", help="read new page text from this file")
+    p_edit.add_argument("--summary", default="", help="edit summary")
+    p_edit.add_argument("--minor", action="store_true", help="mark as a minor edit")
+    p_edit.add_argument("--apply", action="store_true", help="save the edit (default: dry-run diff)")
+
     args = parser.parse_args()
     handlers = {
         "check": cmd_check,
         "whoami": cmd_whoami,
         "recent": cmd_recent,
         "double-redirects": cmd_double_redirects,
+        "page": cmd_page,
+        "edit": cmd_edit,
     }
     try:
         handlers[args.command](args)
