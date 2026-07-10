@@ -8,6 +8,7 @@ Usage (all commands take --lang, e.g. --lang en; default from DEFAULT_LANG):
     uv run bot page TITLE [--raw]           # show a page's wikitext + basic info
     uv run bot edit TITLE ... [--apply]     # preview/save new text for a page
     uv run bot sync-events [--apply]        # sync pt Próximos eventos from en Upcoming events
+    uv run bot serve-cf [--port N]          # local endpoint for the CF-clearance browser extension
 """
 
 import argparse
@@ -16,6 +17,7 @@ import re
 import sys
 import time
 
+from wikifur_bot.cf_sync import cmd_serve_cf
 from wikifur_bot.client import DEFAULT_LANG, connect
 from wikifur_bot.sync_events import cmd_sync_events, SYNC_SOURCE_LANG
 
@@ -241,6 +243,12 @@ def main() -> None:
     p_sync.add_argument("--apply", action="store_true", help="save the edit (default: dry-run diff)")
     p_sync.add_argument("--summary", default="", help="edit summary (default: auto-generated)")
 
+    p_servecf = sub.add_parser(
+        "serve-cf",
+        help="local HTTP endpoint that lets the browser extension refresh CF_CLEARANCE/USER_AGENT_SPOOF",
+    )
+    p_servecf.add_argument("--port", type=int, default=8765, help="port to listen on (default: 8765)")
+
     args = parser.parse_args()
     handlers = {
         "check": cmd_check,
@@ -250,6 +258,7 @@ def main() -> None:
         "page": cmd_page,
         "edit": cmd_edit,
         "sync-events": cmd_sync_events,
+        "serve-cf": cmd_serve_cf,
     }
     try:
         handlers[args.command](args)

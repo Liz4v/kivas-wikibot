@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "WikiFur CF-clearance sync",
+  "version": "1.2.0",
+  "description": "Keeps the wikifur-bot's CF_CLEARANCE and User-Agent synced with this browser session. Temporary workaround until Cloudflare whitelists the bot.",
+  "permissions": ["storage", "cookies", "alarms"],
+  "host_permissions": ["http://127.0.0.1/*", "https://*.wikifur.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "WikiFur CF-clearance sync"
+  }
+}

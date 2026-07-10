@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 13px system-ui, sans-serif; width: 280px; padding: 10px; }
+  button { width: 100%; padding: 6px; margin-top: 8px; cursor: pointer; }
+  label { display: block; margin-top: 8px; }
+  input, textarea { width: 100%; box-sizing: border-box; font: inherit; }
+  textarea { resize: vertical; height: 50px; }
+  #status { margin-top: 8px; color: #555; word-break: break-word; }
+  details { margin-top: 10px; }
+  summary { cursor: pointer; color: #555; }
+</style>
+</head>
+<body>
+  <strong>WikiFur CF-clearance sync</strong>
+  <label>Local server port
+    <input id="port" type="number" value="8765">
+  </label>
+  <button id="sync">Sync now</button>
+  <div id="status">—</div>
+
+  <details>
+    <summary>Paste manually instead</summary>
+    <label>cf_clearance value (DevTools → Application → Cookies)
+      <textarea id="cookie" placeholder="paste cf_clearance value here"></textarea>
+    </label>
+    <button id="syncPasted">Sync pasted value</button>
+  </details>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -20,4 +20,5 @@ uv run bot edit "Some Title" --file new.wikitext --summary "why" --apply  # save
 uv run bot check --lang en    # any command, against en.wikifur.com
 uv run bot sync-events        # preview syncing pt's Próximos eventos from en's Upcoming events
 uv run bot sync-events --apply --summary "why"  # save it for real
+uv run bot serve-cf            # local endpoint for the CF-clearance browser extension (see below)
 ```
